@@ -1,0 +1,28 @@
+{% import "_ui.html" as ui %}<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}Forum{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head><body>
+<header class="topbar"><div class="topbar-inner">
+<a class="brand" href="{{ url_for('index') }}"><span class="brand-mark">{{ ui.icon('chat') }}</span>Forum</a>
+<button class="nav-toggle" type="button" aria-label="Toggle menu" aria-expanded="false">{{ ui.icon('menu') }}</button>
+<nav class="nav-links" aria-label="Main">
+<a class="nav-link {{ 'active' if request.endpoint in ('index', 'view_thread') }}" href="{{ url_for('index') }}">Threads</a>
+{% if g.user %}
+<a class="nav-link {{ 'active' if request.endpoint == 'new_thread' }}" href="{{ url_for('new_thread') }}">New thread</a>
+{% if ROLE_RANK[g.user.role] >= 1 %}<a class="nav-link {{ 'active' if request.endpoint == 'mod_queue' }}" href="{{ url_for('mod_queue') }}">Moderation</a>{% endif %}
+<span class="spacer"></span>
+<span class="who">{{ ui.avatar(g.user.username, 'sm') }}<span>{{ g.user.username }}</span>{{ ui.role_badge(g.user.role) }}</span>
+<form class="inline" method="post" action="{{ url_for('logout') }}">{{ ui.csrf() }}<button class="btn sm">Log out</button></form>
+{% else %}
+<span class="spacer"></span>
+<a class="nav-link" href="{{ url_for('login') }}">Log in</a>
+<a class="btn primary sm" href="{{ url_for('register') }}">Sign up</a>
+{% endif %}
+</nav></div></header>
+<main class="container">
+{% for category, m in get_flashed_messages(with_categories=true) %}<div class="flash {{ category }}" role="alert">{{ m }}</div>{% endfor %}
+{% block content %}{% endblock %}
+</main></body></html>

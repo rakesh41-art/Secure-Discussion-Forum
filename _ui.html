@@ -1,0 +1,57 @@
+{# Shared UI macros. Imported by every page: {% import "_ui.html" as ui %} #}
+{% macro icon(name) -%}
+<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+{%- if name == 'chat' %}<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+{%- elif name == 'pin' %}<path d="M12 17v5"/><path d="M9 3h6l-1 6 3 4H7l3-4z"/>
+{%- elif name == 'lock' %}<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+{%- elif name == 'shield' %}<path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6z"/>
+{%- elif name == 'flag' %}<path d="M5 21V4"/><path d="M5 4h12l-2 4 2 4H5"/>
+{%- elif name == 'plus' %}<path d="M12 5v14M5 12h14"/>
+{%- elif name == 'menu' %}<path d="M4 7h16M4 12h16M4 17h16"/>
+{%- elif name == 'back' %}<path d="M15 6l-6 6 6 6"/>
+{%- elif name == 'next' %}<path d="M9 6l6 6-6 6"/>
+{%- endif %}</svg>
+{%- endmacro %}
+
+{% macro avatar(name, size='') -%}
+<span class="avatar {{ size }} av-{{ name|avc }}" aria-hidden="true">{{ name[:1]|upper }}</span>
+{%- endmacro %}
+
+{% macro role_badge(role) -%}
+{%- if role == 'admin' %}<span class="badge admin">Admin</span>{% elif role == 'moderator' %}<span class="badge moderator">Moderator</span>{% endif -%}
+{%- endmacro %}
+
+{% macro csrf() -%}
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+{%- endmacro %}
+
+{# Anti-spam fields: signed timestamp + hidden honeypot #}
+{% macro stamp() -%}
+{% set s = form_stamp() -%}
+<input type="hidden" name="_ts" value="{{ s[0] }}"><input type="hidden" name="_ts_sig" value="{{ s[1] }}">
+<div class="hp" aria-hidden="true"><label>Leave this field empty<input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+{%- endmacro %}
+
+{% macro modform(path, label, kind='', confirm='') -%}
+<form class="inline" method="post" action="{{ path }}"{% if confirm %} data-confirm="{{ confirm }}"{% endif %}>{{ csrf() }}<button class="btn sm {{ kind }}">{{ label }}</button></form>
+{%- endmacro %}
+
+{% macro report_menu(kind, id) -%}
+<details class="menu"><summary class="btn sm ghost">{{ icon('flag') }} Report</summary>
+<form class="menu-panel" method="post" action="{{ url_for('report', kind=kind, target_id=id) }}">{{ csrf() }}
+<label for="rr-{{ kind }}-{{ id }}">Why are you reporting this?</label>
+<select id="rr-{{ kind }}-{{ id }}" name="reason"><option>Spam or advertising</option><option>Harassment or abuse</option><option>Off-topic</option><option>Other rule violation</option></select>
+<button class="btn sm primary">Send report</button></form></details>
+{%- endmacro %}
+
+{% macro ban_menu(uid, key, label='Ban author') -%}
+<details class="menu"><summary class="btn sm danger">{{ label }}</summary>
+<form class="menu-panel" method="post" action="{{ url_for('mod_user', uid=uid, action='ban') }}" data-confirm="Ban this user? They are logged out immediately.">{{ csrf() }}
+<label for="ban-{{ key }}">Reason (optional)</label>
+<input id="ban-{{ key }}" type="text" name="reason" maxlength="200" placeholder="For example: repeated spam">
+<button class="btn sm danger">Ban user</button></form></details>
+{%- endmacro %}
+
+{% macro role_form(uid, role, label) -%}
+<form class="inline" method="post" action="{{ url_for('set_role', uid=uid) }}">{{ csrf() }}<input type="hidden" name="role" value="{{ role }}"><button class="btn sm">{{ label }}</button></form>
+{%- endmacro %}

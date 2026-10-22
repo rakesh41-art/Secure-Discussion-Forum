@@ -1,0 +1,71 @@
+{% extends "base.html" %}{% import "_ui.html" as ui %}
+{% block title %}Moderation - Forum{% endblock %}
+{% block content %}
+<div class="page-head"><div><h1>Moderation</h1><p class="muted">Review reports, manage users, and see what moderators have done.</p></div></div>
+
+<div class="panel summary">
+<div><b>{{ stats.reports }}</b><span>Open {{ 'report' if stats.reports == 1 else 'reports' }}</span></div>
+<div><b>{{ stats.threads }}</b><span>Live threads</span></div>
+<div><b>{{ stats.users }}</b><span>Members</span></div>
+<div><b>{{ stats.banned }}</b><span>Banned</span></div>
+</div>
+
+<div class="section-head"><h2>Open reports</h2></div>
+{% for r in reports %}
+<div class="panel report">
+<div>
+<div class="muted"><b>{{ r.reporter }}</b> reported a {{ r.target_type }} <span title="{{ r.created_at|dt }}">{{ r.created_at|ago }}</span></div>
+<p>{{ r.reason }}</p>
+{% if r.thread_id %}<p><a href="{{ url_for('view_thread', tid=r.thread_id, _anchor=('reply-' ~ r.target_id) if r.target_type == 'reply' else None) }}">View the {{ r.target_type }}</a></p>{% endif %}
+</div>
+<form class="inline" method="post" action="{{ url_for('resolve_report', rid=r.id) }}">{{ ui.csrf() }}<button class="btn primary sm">Mark resolved</button></form>
+</div>
+{% else %}
+<div class="panel empty"><h2>All clear</h2><p>No reports are waiting for review.</p></div>
+{% endfor %}
+
+<div class="section-head"><h2>Members</h2><input type="search" placeholder="Search members" aria-label="Search members" data-filter="#users-table tbody tr"></div>
+<div class="panel table-wrap">
+<table id="users-table">
+<thead><tr><th>Member</th><th>Role</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+<tbody>
+{% for u in users %}
+<tr>
+<td><span class="user-cell">{{ ui.avatar(u.username, 'sm') }}{{ u.username }}</span></td>
+<td>{% if u.role == 'user' %}Member{% else %}{{ ui.role_badge(u.role) }}{% endif %}</td>
+<td>{% if u.banned %}<span class="badge banned">Banned</span>{% else %}<span class="badge active">Active</span>{% endif %}</td>
+<td class="muted" title="{{ u.created_at|dt }}">{{ u.created_at|ago }}</td>
+<td><div class="row-actions">
+{% if u.id != g.user.id and ROLE_RANK[g.user.role] > ROLE_RANK[u.role] %}
+{% if u.banned %}{{ ui.modform(url_for('mod_user', uid=u.id, action='unban'), 'Unban') }}{% else %}{{ ui.ban_menu(u.id, 'q' ~ u.id, 'Ban') }}{% endif %}
+{% endif %}
+{% if g.user.role == 'admin' and u.role != 'admin' and not u.banned %}
+{% if u.role == 'moderator' %}{{ ui.role_form(u.id, 'user', 'Remove moderator') }}{% else %}{{ ui.role_form(u.id, 'moderator', 'Make moderator') }}{% endif %}
+{% endif %}
+</div></td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+
+<div class="section-head"><h2>Audit log</h2><span class="muted">Most recent 50 actions</span></div>
+<div class="panel table-wrap">
+<table>
+<thead><tr><th>When</th><th>Moderator</th><th>Action</th><th>Target</th><th>Detail</th></tr></thead>
+<tbody>
+{% for m in log %}
+<tr>
+<td class="muted" title="{{ m.created_at|dt }}">{{ m.created_at|ago }}</td>
+<td>{{ m.username }}</td>
+<td><span class="badge {{ 'danger' if m.action in ('ban', 'remove') else '' }}">{{ m.action }}</span></td>
+<td>{{ m.target }}</td>
+<td class="muted">{{ m.detail }}</td>
+</tr>
+{% else %}
+<tr><td colspan="5" class="muted">No moderation actions yet.</td></tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endblock %}

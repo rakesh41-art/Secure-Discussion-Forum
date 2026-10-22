@@ -1,0 +1,68 @@
+{% extends "base.html" %}{% import "_ui.html" as ui %}
+{% block title %}{{ t.title }} - Forum{% endblock %}
+{% block content %}
+{% set is_mod = g.user and ROLE_RANK[g.user.role] >= 1 %}
+<a class="back" href="{{ url_for('index') }}">{{ ui.icon('back') }} All threads</a>
+
+<article class="panel post {{ 'is-removed' if t.removed }}">
+{{ ui.avatar(t.username) }}
+<div class="post-main">
+<h1 class="post-title">{{ t.title }}</h1>
+<div class="post-head">
+<span><b>{{ t.username }}</b></span>{{ ui.role_badge(t.author_role) }}
+<span title="{{ t.created_at|dt }}">{{ t.created_at|ago }}</span>
+{% if t.pinned %}<span class="badge pinned">{{ ui.icon('pin') }} Pinned</span>{% endif %}
+{% if t.locked %}<span class="badge locked">{{ ui.icon('lock') }} Locked</span>{% endif %}
+{% if t.removed %}<span class="badge removed">Removed</span>{% endif %}
+</div>
+<div class="post-body">{{ t.body }}</div>
+{% if g.user and not t.removed %}<div class="post-actions">{{ ui.report_menu('thread', t.id) }}</div>{% endif %}
+{% if is_mod %}
+<div class="modbar"><span class="modbar-label">{{ ui.icon('shield') }} Moderator tools</span>
+{{ ui.modform(url_for('mod_thread', tid=t.id, action='unlock' if t.locked else 'lock'), 'Unlock' if t.locked else 'Lock') }}
+{{ ui.modform(url_for('mod_thread', tid=t.id, action='unpin' if t.pinned else 'pin'), 'Unpin' if t.pinned else 'Pin') }}
+{% if t.removed %}{{ ui.modform(url_for('mod_thread', tid=t.id, action='restore'), 'Restore') }}
+{% else %}{{ ui.modform(url_for('mod_thread', tid=t.id, action='remove'), 'Remove thread', 'danger', 'Remove this thread? It will be hidden from regular users.') }}{% endif %}
+{% if ROLE_RANK[g.user.role] > ROLE_RANK[t.author_role] %}{{ ui.ban_menu(t.author_id, 't' ~ t.id) }}{% endif %}
+</div>
+{% endif %}
+</div>
+</article>
+
+<h2 class="replies-title">{{ replies|length }} {{ 'reply' if replies|length == 1 else 'replies' }}</h2>
+{% for r in replies %}
+<article class="panel post reply {{ 'is-removed' if r.removed }}" id="reply-{{ r.id }}">
+{{ ui.avatar(r.username, 'sm') }}
+<div class="post-main">
+<div class="post-head">
+<span><b>{{ r.username }}</b></span>{{ ui.role_badge(r.role) }}
+<span title="{{ r.created_at|dt }}">{{ r.created_at|ago }}</span>
+{% if r.removed %}<span class="badge removed">Removed</span>{% endif %}
+</div>
+<div class="post-body">{{ r.body }}</div>
+{% if g.user and not r.removed %}<div class="post-actions">{{ ui.report_menu('reply', r.id) }}</div>{% endif %}
+{% if is_mod %}
+<div class="modbar"><span class="modbar-label">{{ ui.icon('shield') }} Moderator tools</span>
+{% if r.removed %}{{ ui.modform(url_for('mod_reply', rid=r.id, action='restore'), 'Restore') }}
+{% else %}{{ ui.modform(url_for('mod_reply', rid=r.id, action='remove'), 'Remove reply', 'danger', 'Remove this reply? It will be hidden from regular users.') }}{% endif %}
+{% if ROLE_RANK[g.user.role] > ROLE_RANK[r.role] %}{{ ui.ban_menu(r.author_id, 'r' ~ r.id) }}{% endif %}
+</div>
+{% endif %}
+</div>
+</article>
+{% endfor %}
+
+{% if t.locked %}
+<div class="panel notice">{{ ui.icon('lock') }} This thread is locked, so new replies are turned off.</div>
+{% elif g.user %}
+<form class="panel composer" method="post" action="{{ url_for('reply', tid=t.id) }}" data-once>
+{{ ui.csrf() }}{{ ui.stamp() }}
+<h2><label for="body">Add a reply</label></h2>
+<textarea id="body" name="body" rows="5" required maxlength="10000" data-counter="#body-count" data-min="2" data-max="10000" placeholder="Write your reply">{{ request.form.get('body', '') if request.method == 'POST' else '' }}</textarea>
+<div class="counter-row"><span class="hint">Up to 3 links per post. New accounts can add links after 24 hours.</span><span id="body-count" class="counter">0 / 10000</span></div>
+<div class="actions"><button class="btn primary">Post reply</button></div>
+</form>
+{% else %}
+<div class="panel notice"><span><a href="{{ url_for('login') }}">Log in</a> or <a href="{{ url_for('register') }}">sign up</a> to reply.</span></div>
+{% endif %}
+{% endblock %}

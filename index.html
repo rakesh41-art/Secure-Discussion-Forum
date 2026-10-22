@@ -1,0 +1,43 @@
+{% extends "base.html" %}{% import "_ui.html" as ui %}
+{% block title %}Threads - Forum{% endblock %}
+{% block content %}
+<div class="page-head">
+<div><h1>Threads</h1><p class="muted">Pinned threads first, then the most recently active.</p></div>
+{% if g.user %}<a class="btn primary" href="{{ url_for('new_thread') }}">{{ ui.icon('plus') }} New thread</a>
+{% else %}<a class="btn primary" href="{{ url_for('login') }}">Log in to post</a>{% endif %}
+</div>
+{% if threads %}
+<ul class="panel thread-list">
+{% for t in threads %}
+<li class="thread-item {{ 'is-pinned' if t.pinned }} {{ 'is-removed' if t.removed }}">
+{{ ui.avatar(t.username) }}
+<div class="thread-main">
+<a class="thread-title" href="{{ url_for('view_thread', tid=t.id) }}">{{ t.title }}</a>
+<div class="thread-snippet">{{ t.body|truncate(180) }}</div>
+<div class="thread-meta">
+<span class="who-line"><b>{{ t.username }}</b>{{ ui.role_badge(t.role) }}</span>
+<span title="{{ t.created_at|dt }}">Started {{ t.created_at|ago }}</span>
+<span title="{{ t.last_activity|dt }}">Active {{ t.last_activity|ago }}</span>
+{% if t.pinned %}<span class="badge pinned">{{ ui.icon('pin') }} Pinned</span>{% endif %}
+{% if t.locked %}<span class="badge locked">{{ ui.icon('lock') }} Locked</span>{% endif %}
+{% if t.removed %}<span class="badge removed">Removed</span>{% endif %}
+</div></div>
+<div class="reply-count"><b>{{ t.n_replies }}</b><span>{{ 'reply' if t.n_replies == 1 else 'replies' }}</span></div>
+</li>
+{% endfor %}
+</ul>
+{% else %}
+<div class="panel empty">
+<h2>No threads yet</h2>
+<p>Start the first conversation.</p>
+{% if g.user %}<a class="btn primary" href="{{ url_for('new_thread') }}">Start a thread</a>
+{% else %}<a class="btn primary" href="{{ url_for('register') }}">Create an account</a>{% endif %}
+</div>
+{% endif %}
+{% if page > 1 or threads|length == 25 %}
+<nav class="pager" aria-label="Pagination">
+{% if page > 1 %}<a class="btn" href="?page={{ page - 1 }}">{{ ui.icon('back') }} Newer</a>{% else %}<span></span>{% endif %}
+{% if threads|length == 25 %}<a class="btn" href="?page={{ page + 1 }}">Older {{ ui.icon('next') }}</a>{% endif %}
+</nav>
+{% endif %}
+{% endblock %}

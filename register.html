@@ -1,0 +1,21 @@
+{% extends "base.html" %}{% import "_ui.html" as ui %}
+{% block title %}Sign up - Forum{% endblock %}
+{% block content %}
+<form class="panel form-card narrow" method="post">
+{{ ui.csrf() }}{{ ui.stamp() }}
+<h1>Create your account</h1>
+<p class="lede">Join the discussion in under a minute.</p>
+<div class="field">
+<label for="username">Username</label>
+<input id="username" type="text" name="username" required maxlength="24" pattern="[A-Za-z0-9_]{3,24}" autocomplete="username" value="{{ request.form.get('username', '') }}">
+<div class="hint">3 to 24 letters, numbers, or underscores</div>
+</div>
+<div class="field">
+<label for="password">Password</label>
+<div class="pw-wrap"><input id="password" type="password" name="password" required minlength="10" maxlength="200" autocomplete="new-password"><button class="pw-toggle" type="button" data-toggle-password="#password">Show</button></div>
+<div class="hint">At least 10 characters, and different from your username</div>
+</div>
+<button class="btn primary block">Create account</button>
+<p class="form-foot">Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
+</form>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "base.html" %}{% import "_ui.html" as ui %}
+{% block title %}Log in - Forum{% endblock %}
+{% block content %}
+<form class="panel form-card narrow" method="post">
+{{ ui.csrf() }}
+<h1>Log in</h1>
+<p class="lede">Welcome back.</p>
+<div class="field">
+<label for="username">Username</label>
+<input id="username" type="text" name="username" required maxlength="24" autocomplete="username" value="{{ request.form.get('username', '') }}">
+</div>
+<div class="field">
+<label for="password">Password</label>
+<div class="pw-wrap"><input id="password" type="password" name="password" required autocomplete="current-password"><button class="pw-toggle" type="button" data-toggle-password="#password">Show</button></div>
+</div>
+<button class="btn primary block">Log in</button>
+<p class="form-foot">New here? <a href="{{ url_for('register') }}">Create an account</a></p>
+</form>
+{% endblock %}
